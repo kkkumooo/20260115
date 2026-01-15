@@ -3,159 +3,176 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>課堂即時投票系統</title>
+    <title>即時課堂投票系統</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
-        body { font-family: '微軟正黑體', sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #f4f4f9; }
-        .container { background: white; padding: 20px; border-radius: 10px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
-        h1 { text-align: center; color: #333; }
-        
-        /* 老師控制區 */
-        .admin-panel { border-bottom: 2px dashed #ddd; padding-bottom: 20px; margin-bottom: 20px; }
-        input[type="text"] { width: 70%; padding: 10px; font-size: 16px; }
-        button.reset-btn { background-color: #ff4d4d; color: white; border: none; padding: 10px 15px; cursor: pointer; border-radius: 5px; }
-        
-        /* 投票區 */
-        .options-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 20px; }
-        .vote-btn { 
-            padding: 20px; font-size: 20px; border: none; border-radius: 8px; 
-            cursor: pointer; transition: transform 0.1s; color: white;
-            font-weight: bold;
+        body {
+            font-family: "Microsoft JhengHei", Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f4f4f9;
+            text-align: center;
         }
-        .vote-btn:active { transform: scale(0.95); }
-        .btn-a { background-color: #3498db; }
-        .btn-b { background-color: #e74c3c; }
-        .btn-c { background-color: #f1c40f; color: black; }
-        .btn-d { background-color: #2ecc71; }
 
-        /* 結果顯示區 */
-        .result-bar-container { margin-bottom: 10px; }
-        .label { font-weight: bold; display: flex; justify-content: space-between; }
-        .progress-bg { background-color: #e0e0e0; height: 20px; border-radius: 10px; overflow: hidden; margin-top: 5px; }
-        .progress-fill { height: 100%; width: 0%; transition: width 0.5s ease-in-out; }
+        /* 題目區塊 */
+        .question-section {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+
+        input[type="text"] {
+            width: 80%;
+            padding: 10px;
+            font-size: 1.2rem;
+            border: 2px solid #ddd;
+            border-radius: 5px;
+            margin-bottom: 10px;
+            text-align: center;
+        }
+
+        /* 投票按鈕區塊 */
+        .options-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+
+        .vote-btn {
+            padding: 20px;
+            font-size: 1.5rem;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: transform 0.1s, opacity 0.2s;
+        }
+
+        .vote-btn:active {
+            transform: scale(0.95);
+        }
+
+        /* 按鈕顏色 */
+        .btn-a { background-color: #FF6384; } /* 紅 */
+        .btn-b { background-color: #36A2EB; } /* 藍 */
+        .btn-c { background-color: #FFCE56; } /* 黃 */
+        .btn-d { background-color: #4BC0C0; } /* 綠 */
+
+        /* 結果圖表區塊 */
+        .chart-container {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        
+        .controls {
+            margin-top: 20px;
+        }
+        
+        .reset-btn {
+            padding: 8px 16px;
+            background-color: #666;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
     </style>
 </head>
 <body>
 
-<div class="container">
-    <h1>🙋‍♂️ 即時投票</h1>
-
-    <!-- 老師設定題目區 -->
-    <div class="admin-panel">
-        <label>題目：</label>
-        <input type="text" id="questionInput" placeholder="輸入問題後按更新...">
-        <button onclick="updateQuestion()">更新題目</button>
-        <button class="reset-btn" onclick="resetVotes()">重置投票</button>
+    <div class="question-section">
+        <h2>課堂即時投票</h2>
+        <input type="text" id="questionInput" placeholder="請在此輸入老師的題目..." value="您覺得今天的天氣如何？">
     </div>
 
-    <!-- 題目顯示 -->
-    <h2 id="displayQuestion">等待題目中...</h2>
-
-    <!-- 學生投票按鈕 -->
     <div class="options-grid">
-        <button class="vote-btn btn-a" onclick="vote('A')">A</button>
-        <button class="vote-btn btn-b" onclick="vote('B')">B</button>
-        <button class="vote-btn btn-c" onclick="vote('C')">C</button>
-        <button class="vote-btn btn-d" onclick="vote('D')">D</button>
+        <button class="vote-btn btn-a" onclick="vote(0)">選項 A</button>
+        <button class="vote-btn btn-b" onclick="vote(1)">選項 B</button>
+        <button class="vote-btn btn-c" onclick="vote(2)">選項 C</button>
+        <button class="vote-btn btn-d" onclick="vote(3)">選項 D</button>
     </div>
 
-    <!-- 結果顯示 -->
-    <h3>📊 投票結果：(<span id="totalVotes">0</span> 人投票)</h3>
-    <div id="resultsArea">
-        <!-- 結果條將由 JS 生成 -->
+    <div class="chart-container">
+        <canvas id="voteChart"></canvas>
+        <div class="controls">
+            <h3 id="totalVotes">總票數: 0</h3>
+            <button class="reset-btn" onclick="resetVotes()">重置投票結果</button>
+        </div>
     </div>
-</div>
 
-<!-- 引入 Firebase SDK -->
-<script type="module">
-    // 1. 引入 Firebase 必要模組
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
-    import { getDatabase, ref, onValue, set, runTransaction } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-database.js";
-
-    // 🔴 2. 請將你的 firebaseConfig 貼在這裡 (取代下方的假資料)
-    const firebaseConfig = {
-        apiKey: "你的API_KEY",
-        authDomain: "你的專案ID.firebaseapp.com",
-        databaseURL: "https://你的專案ID-default-rtdb.firebaseio.com",
-        projectId: "你的專案ID",
-        storageBucket: "你的專案ID.appspot.com",
-        messagingSenderId: "123456789",
-        appId: "1:123456789:web:xxxxxx"
-    };
-
-    // 3. 初始化 Firebase
-    const app = initializeApp(firebaseConfig);
-    const db = getDatabase(app);
-    const voteRef = ref(db, 'classroom_vote');
-
-    // 4. 監聽資料庫變動 (Real-time 核心)
-    onValue(voteRef, (snapshot) => {
-        const data = snapshot.val();
+    <script>
+        // 初始化數據
+        let votes = [0, 0, 0, 0]; // A, B, C, D 的票數
+        const labels = ['選項 A', '選項 B', '選項 C', '選項 D'];
         
-        if (!data) {
-            // 如果資料庫是空的，初始化它
-            resetVotes(); 
-            return;
-        }
-
-        // 更新介面
-        document.getElementById('questionInput').value = data.question;
-        document.getElementById('displayQuestion').innerText = data.question;
-        
-        // 計算總票數
-        const total = (data.counts.A || 0) + (data.counts.B || 0) + (data.counts.C || 0) + (data.counts.D || 0);
-        document.getElementById('totalVotes').innerText = total;
-
-        // 更新圖表
-        updateChart('A', data.counts.A || 0, total, '#3498db');
-        updateChart('B', data.counts.B || 0, total, '#e74c3c');
-        updateChart('C', data.counts.C || 0, total, '#f1c40f');
-        updateChart('D', data.counts.D || 0, total, '#2ecc71');
-    });
-
-    // 輔助函式：更新單一條圖表
-    function updateChart(option, count, total, color) {
-        let percentage = total === 0 ? 0 : Math.round((count / total) * 100);
-        
-        // 確保 HTML 結構存在
-        let container = document.getElementById(`res-${option}`);
-        if(!container) {
-            document.getElementById('resultsArea').innerHTML += `
-                <div class="result-bar-container">
-                    <div class="label"><span>選項 ${option}</span> <span id="txt-${option}">0票 (0%)</span></div>
-                    <div class="progress-bg">
-                        <div id="bar-${option}" class="progress-fill" style="background-color: ${color};"></div>
-                    </div>
-                </div>`;
-        }
-
-        // 更新數值與寬度
-        document.getElementById(`txt-${option}`).innerText = `${count} 票 (${percentage}%)`;
-        document.getElementById(`bar-${option}`).style.width = `${percentage}%`;
-    }
-
-    // 5. 全域功能 (讓 HTML 按鈕可以呼叫 module 內的函式)
-    window.vote = function(option) {
-        const optionRef = ref(db, `classroom_vote/counts/${option}`);
-        // 使用 Transaction 確保多人同時點擊不會算錯
-        runTransaction(optionRef, (currentCount) => {
-            return (currentCount || 0) + 1;
+        // 設定 Chart.js 圖表
+        const ctx = document.getElementById('voteChart').getContext('2d');
+        const myChart = new Chart(ctx, {
+            type: 'bar', // 長條圖
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: '票數',
+                    data: votes,
+                    backgroundColor: [
+                        'rgba(255, 99, 132, 0.7)',
+                        'rgba(54, 162, 235, 0.7)',
+                        'rgba(255, 206, 86, 0.7)',
+                        'rgba(75, 192, 192, 0.7)'
+                    ],
+                    borderColor: [
+                        'rgba(255, 99, 132, 1)',
+                        'rgba(54, 162, 235, 1)',
+                        'rgba(255, 206, 86, 1)',
+                        'rgba(75, 192, 192, 1)'
+                    ],
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            stepSize: 1 // 設定 Y 軸刻度為整數
+                        }
+                    }
+                },
+                plugins: {
+                    legend: { display: false } // 隱藏圖例
+                }
+            }
         });
-    };
 
-    window.updateQuestion = function() {
-        const newQ = document.getElementById('questionInput').value;
-        set(ref(db, 'classroom_vote/question'), newQ);
-    };
-
-    window.resetVotes = function() {
-        if(confirm('確定要歸零所有票數嗎？')) {
-            set(voteRef, {
-                question: document.getElementById('questionInput').value || "請準備開始投票",
-                counts: { A: 0, B: 0, C: 0, D: 0 }
-            });
+        // 投票功能
+        function vote(index) {
+            votes[index]++;
+            updateChart();
         }
-    };
-</script>
 
+        // 更新圖表與總票數
+        function updateChart() {
+            myChart.data.datasets[0].data = votes;
+            myChart.update();
+            
+            const total = votes.reduce((a, b) => a + b, 0);
+            document.getElementById('totalVotes').innerText = `總票數: ${total}`;
+        }
+
+        // 重置功能
+        function resetVotes() {
+            if(confirm("確定要清空所有投票結果嗎？")) {
+                votes = [0, 0, 0, 0];
+                updateChart();
+            }
+        }
+    </script>
 </body>
 </html>
